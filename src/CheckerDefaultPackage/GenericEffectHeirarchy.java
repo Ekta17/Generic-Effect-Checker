@@ -48,6 +48,14 @@ public interface GenericEffectHeirarchy {
      */
     public abstract Set<? extends AnnotationMirror> getBottomAnnotations();
     
+
+    /**
+     * Tests whether rhs is a sub-Effect of lhs, according to the type
+     * Effect hierarchy. This checks only the Effects, not the Java type.
+     *
+     * @return true iff rhs is a sub Effect of lhs
+     */
+    public abstract boolean isSubtype(Class<? extends Annotation> rhs, Class<? extends Annotation> lhs);
     
     //Ekta 
     

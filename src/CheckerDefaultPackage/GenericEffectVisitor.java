@@ -156,7 +156,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
                     atypeFactory.findInheritedEffectRange(
                             ((TypeElement) methElt.getEnclosingElement()), methElt, true, node);*/
           
-            atypeFactory.checkEffectOverrid((TypeElement)methElt.getEnclosingElement(), methElt, true, node);
+            atypeFactory.checkEffectOverrid((TypeElement)(methElt.getEnclosingElement()), methElt, true, node);
            
             if (annotatedEffect == null) {
                 atypeFactory

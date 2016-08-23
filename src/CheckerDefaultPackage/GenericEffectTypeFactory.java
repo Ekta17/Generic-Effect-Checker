@@ -139,59 +139,7 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 				return OkEffect;
 			}
 		}
-
-		/*
-		 * AnnotationMirror targetIOP = getDeclAnnotation(methodElt,
-		 * IOEffect.class); AnnotationMirror targetNoIOP =
-		 * getDeclAnnotation(methodElt, NoIOEffect.class);
-		 */
-
-		/*
-		 * TypeElement targetClassElt = (TypeElement)
-		 * methodElt.getEnclosingElement();
-		 * 
-		 * if (debugSpew) { System.err.println("targetClassElt found"); }
-		 */
-
-		// Short-circuit if the method is explicitly annotated
-
-		/*
-		 * if (targetNoIOP != null) { if (debugSpew) {
-		 * System.err.println("Method marked @NoIOEffect"); } return new
-		 * MainEffect(NoIOEffect.class); } else if (targetIOP != null) { if
-		 * (debugSpew) { System.err.println("Method marked @IOEffect"); } return
-		 * new MainEffect(IOEffect.class); }
-		 */
-
-		// The method is not explicitly annotated, so check class and package
-		// annotations,
-		// and supertype effects if in an anonymous inner class
-
-		/*
-		 * if (isIOType(targetClassElt)) { // Already checked, no
-		 * explicit @NoIOEffect annotation return new
-		 * MainEffect(IOEffect.class); }
-		 */
-		// Anonymous inner types should just get the effect of the parent by
-		// default, rather than annotating every instance. Unless it's
-		// implementing a polymorphic supertype, in which case we still want the
-		// developer to be explicit.
-		/*
-		 * if (isAnonymousType(targetClassElt)) { boolean
-		 * canInheritParentEffects = true; // Refine this for polymorphic
-		 * parents //DeclaredType directSuper = (DeclaredType)
-		 * targetClassElt.getSuperclass(); //TypeElement superElt =
-		 * (TypeElement) directSuper.asElement(); // Anonymous subtypes of
-		 * polymorphic classes other than object can't inherit
-		 * 
-		 * if (canInheritParentEffects) { GenericEffectInterface.EffectRange r =
-		 * findInheritedEffectRange(targetClassElt, methodElt); return (r !=
-		 * null ? genericEffect.min(r.min, r.max) : new
-		 * MainEffect(NoIOEffect.class) genericEffect.greatestLowerBound(a1,
-		 * a2)); } }
-		 */
-
-		return /* new MainEffect(NoIOEffect.class) */genericEffectHeirarchy.getBottomMostEffectInLattice();
+		return genericEffectHeirarchy.getBottomMostEffectInLattice();
 	}
 
 	/*public void findInheritedEffectRange(TypeElement declaringType,
@@ -199,111 +147,56 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		findInheritedEffectRange(declaringType, overridingMethod, false, null);
 	}*/
 
+	/**
+	 * Looks for invalid overrides, 
+	 * (cases where a method override declares a larger/higher effect than a method it overrides/implements)
+	 * 
+	 * @param declaringType
+	 * @param overridingMethod
+	 * @param issueConflictWarning
+	 * @param errorNode
+	 */
 	public void checkEffectOverrid(TypeElement declaringType, ExecutableElement overridingMethod,
 			boolean issueConflictWarning, Tree errorNode) {
 		assert (declaringType != null);
 
-		ExecutableElement superOverride = null;
-		ExecutableElement subOverride = null;
-		/*
-		 * ExecutableElement io_override = null; ExecutableElement noIO_override
-		 * = null;
-		 */
-
-		// We must account for explicit annotation, type declaration
-		// annotations, and package annotations
-
-		// Ekta :Not Sure of this code's Validity
-
-		for (Class<? extends Annotation> validEffect : genericEffectHeirarchy.getValidEffects()) {
-			AnnotationMirror declaredAnnotation = getDeclAnnotation(overridingMethod, validEffect);
-
-			boolean isSuperEffect = (declaredAnnotation != null
-			/* || isIOType(declaringType) */) && getDeclAnnotation(overridingMethod,
-					genericEffectHeirarchy.getBottomAnnotation(declaredAnnotation)) == null;
-
-			// TODO: We must account for @IO and @AlwaysNoIO annotations for
-			// extends
-			// and implements clauses, and do the proper substitution of @Poly
-			// effects and quals!
-			// List<? extends TypeMirror> interfaces =
-			// declaringType.getInterfaces();
-			TypeMirror superclass = declaringType.getSuperclass();
-			while (superclass != null && superclass.getKind() != TypeKind.NONE) {
-				ExecutableElement overrides = findJavaOverride(overridingMethod, superclass);
-				if (overrides != null) {
-					GenericEffect eff = getDeclaredEffect(overrides);
-					assert (eff != null);
-					// Ekta: here instead of using decalredAnnotation it should
-					// be Class<? extends Annotation> validEffect
-					if (/* eff.isNoIO() */ eff.equals(genericEffect.getBottomAnnotation(declaredAnnotation))) {
-						// found a noIO override
-						subOverride = overrides;
-						if (isSuperEffect && issueConflictWarning) {
-							checker.report(Result.failure("override.effect.invalid", overridingMethod, declaringType,
-									subOverride, superclass), errorNode);
-						}
-					} else if (eff.isSuper()) {
-						// found a io override
-						superOverride = overrides;
-					}
-				}
-				DeclaredType decl = (DeclaredType) superclass;
-				superclass = ((TypeElement) decl.asElement()).getSuperclass();
-			}
-
-			AnnotatedTypeMirror.AnnotatedDeclaredType annoDecl = fromElement(declaringType);
-			for (AnnotatedTypeMirror.AnnotatedDeclaredType ty : annoDecl.directSuperTypes()) {
-				ExecutableElement overrides = findJavaOverride(overridingMethod, ty.getUnderlyingType());
-				if (overrides != null) {
-					GenericEffect eff = getDeclaredEffect(overrides);
-					if (/* eff.isNoIO() */ eff.equals(genericEffect.getBottomAnnotation(declaredAnnotation))) {
-						// found a noIO override
-						subOverride = overrides;
-						if (isSuperEffect && issueConflictWarning) {
-							checker.report(Result.failure("override.effect.invalid", overridingMethod, declaringType,
-									subOverride, ty), errorNode);
-						}
-					} else if (eff.isSuper()) {
-						// found a io override
-						superOverride = overrides;
-					}
-				}
-			}
-
-			// We don't need to issue warnings for inheriting from poly and a
-			// concrete effect.
-			if (superOverride != null && subOverride != null && issueConflictWarning) {
-				// There may be more than two parent methods, but for now it's
-				// enough to know there are at least 2 in conflict
-				checker.report(
-						Result.warning("override.effect.warning.inheritance", overridingMethod, declaringType,
-								superOverride.toString(), superOverride.getEnclosingElement().asType().toString(),
-								subOverride.toString(), subOverride.getEnclosingElement().asType().toString()),
-						errorNode);
-			}
-
-			GenericEffect min = null;
-
-			if (subOverride != null)
-				min = new MainEffect(NoIOEffect.class);
-
-			GenericEffect max = null;
-
-			if (superOverride != null)
-				max = new MainEffect(IOEffect.class);
-
-			if (debugSpew) {
-				System.err.println("Found " + declaringType + "." + overridingMethod + " to have inheritance pair ("
-						+ min + "," + max + ")");
-			}
-
-			if (min == null && max == null) {
-				return null;
-			} else {
-				return genericEffect.EffectRange(min, max);
-			}
-
+		//Get the overriding method annotations
+		//Iterate over all of its subtypes 
+		//For each subtype, that has its own implementation or declaration of the input method:
+			//Check that the effect of the override <= the declared effect of the origin. 
+	
+		//There are two sets of subtypes to traverse:
+			//1. Chain of Parent classes -> terminating in Object
+			//2. Set of interfaces the class implements.
+		
+		
+		Class<? extends Annotation> overridingEffect = getDeclaredEffect(overridingMethod);
+				
+		//Chain of parent classes
+		TypeMirror superclass = declaringType.getSuperclass();
+		while (superclass != null && superclass.getKind() != TypeKind.NONE) {
+            ExecutableElement overrides = findJavaOverride(overridingMethod, superclass);
+            Class<? extends Annotation> overridesEffect = getDeclaredEffect(overrides);
+            if (overrides != null) {
+            	Class<? extends Annotation> superClassEffect=getDeclaredEffect(overrides);
+            	if(!genericEffectHeirarchy.isSubtype(overridingEffect, overridesEffect) && issueConflictWarning){
+            		checker.report(
+                            Result.failure(
+                                    "override.effect.invalid",
+                                    overridingMethod,
+                                    declaringType,
+                                    overrides,
+                                    superclass),
+                            errorNode);
+            	}
+            }
+            
+            DeclaredType decl = (DeclaredType) superclass;
+            superclass = ((TypeElement) decl.asElement()).getSuperclass();
 		}
+		
+		//Set of interfaces
+		
+		
 	}
 }
