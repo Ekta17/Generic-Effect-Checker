@@ -1,0 +1,16 @@
+package java.io;
+import qual.*;
+
+@IOType class PrintStream{
+	@NoIOEffect void print (boolean b);
+	@NoIOEffect void print (char c);
+	@IOEffect void print (char[] s); 
+	@NoIOEffect void print (double d);
+	@IOEffect void print (float f);
+	@NoIOEffect void print (int i);
+	@IOEffect void print (long l);
+	@NoIOEffect void print (Object obj);
+	@IOEffect void print (String s);
+	@NoIOEffect PrintStream	printf(Locale l, String format, Object... args);
+	@IOEffect PrintStream	printf(String format, Object... args);
+}

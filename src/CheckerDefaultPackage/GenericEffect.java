@@ -1,23 +1,19 @@
 package CheckerDefaultPackage;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Set;
-
-import javax.lang.model.element.AnnotationMirror;
 
 public interface GenericEffect {
 
 	 boolean LE(Class<? extends Annotation> left, Class<? extends Annotation> right);
-	 GenericEffect min(GenericEffect l, GenericEffect r);
-	 boolean isSub();
+	 Class<? extends Annotation> min(Class<? extends Annotation> l, Class<? extends Annotation> r);
+	/* boolean isSub();
 	 boolean isSuper();
-	 boolean equals(GenericEffect e);
+	 boolean equals(Class<? extends Annotation> e);*/
 	
 	 class EffectRange {
-		 GenericEffect min, max;
+		 Class<? extends Annotation> min, max;
 
-	        public EffectRange(GenericEffect min, GenericEffect max) {
+	        public EffectRange(Class<? extends Annotation> min, Class<? extends Annotation> max) {
 	            assert (min != null || max != null);
 	            // If one is null, fill in with the other
 	            this.min = (min != null ? min : max);
@@ -25,6 +21,6 @@ public interface GenericEffect {
 	        }
 	    }
 	 
-	Class<? extends Annotation> getAnnot();
+	/*Class<? extends Annotation> getAnnot();*/
 
 }

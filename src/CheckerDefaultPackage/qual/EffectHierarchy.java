@@ -14,26 +14,7 @@ import org.checkerframework.javacutil.ErrorReporter;
 
 public abstract class EffectHierarchy {
 
-	/*//Ekta code starts
 	
-	private Class<? extends Annotation> validEffects;
-	
-	
-	public Class<? extends Annotation> getValidEffects() {
-		return validEffects;
-	}
-
-	public void setValidEffects(Class<? extends Annotation> validEffects) {
-		this.validEffects = validEffects;
-	}
-	
-	
-	
-	//Ekta code ends
-*/	
-	
-	
-
 	/**
      * Determine whether the instance is valid.
      * @return whether the instance is valid

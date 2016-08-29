@@ -23,39 +23,39 @@ public interface GenericEffectHeirarchy {
      * @param a1 first annotation
      * @param a2 second annotation
      * @return greatest lower bound of the two annotations
-     */
-    public abstract AnnotationMirror greatestLowerBound(AnnotationMirror a1, AnnotationMirror a2);
-    
-    /**
+     *//*
+    public abstract AnnotationMirror greatestLowerBound(AnnotationMirror a1, AnnotationMirror a2);*/
+   /* 
+    *//**
      * Return the top Effect for the given Effect, that is, the Effect
      * that is a super effect of start but no further super effect exist.
-     */
-    public abstract AnnotationMirror getTopAnnotation(AnnotationMirror start);
+     *//*
+    public abstract AnnotationMirror getTopAnnotation(AnnotationMirror start);*/
 
     /**
      * Return the bottom for the given Effect, that is, the Effect that is a
      * sub Effect of start but no further sub Effect exist.
-     */
-    public abstract AnnotationMirror getBottomAnnotation(AnnotationMirror start);
+     *//*
+    public abstract AnnotationMirror getBottomAnnotation(AnnotationMirror start);*/
 
-    /**
+  /*  *//**
      * @return  the top (ultimate super) Effects in the type system
-     */
-    public abstract Set<? extends AnnotationMirror> getTopAnnotations();
+     *//*
+    public abstract Set<? extends AnnotationMirror> getTopAnnotations();*/
     
-    /**
+   /* *//**
      * @return the bottom Effect in the hierarchy
-     */
+     *//*
     public abstract Set<? extends AnnotationMirror> getBottomAnnotations();
-    
+    */
 
     /**
      * Tests whether rhs is a sub-Effect of lhs, according to the type
      * Effect hierarchy. This checks only the Effects, not the Java type.
      *
      * @return true iff rhs is a sub Effect of lhs
-     */
-    public abstract boolean isSubtype(Class<? extends Annotation> rhs, Class<? extends Annotation> lhs);
+     *//*
+    public abstract boolean isSubtype(Class<? extends Annotation> rhs, Class<? extends Annotation> lhs);*/
     
     //Ekta 
     

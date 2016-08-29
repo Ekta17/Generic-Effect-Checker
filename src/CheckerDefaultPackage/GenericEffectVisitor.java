@@ -21,6 +21,9 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 
+import testing.EffectHierarchy;
+import testing.MainEffect;
+
 public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFactory>{
 
 	protected final boolean debugSpew;
@@ -28,7 +31,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
 	private GenericEffectHeirarchy genericEffectHeirarchy;
 
     // effStack and currentMethods should always be the same size.
-    protected final Stack<GenericEffect> effStack;
+    protected final Stack<Class<? extends Annotation>> effStack;
     protected final Stack<MethodTree> currentMethods;
 
     public GenericEffectVisitor(BaseTypeChecker checker) {
@@ -37,8 +40,11 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         if (debugSpew) {
             System.err.println("Running IOEffectVisitor");
         }
-        effStack = new Stack<GenericEffect>();
+        effStack = new Stack<Class<? extends Annotation>>();
         currentMethods = new Stack<MethodTree>();
+        
+        genericEffect=new MainEffect();
+        genericEffectHeirarchy=new EffectHierarchy();
     }
     
     @Override
@@ -100,7 +106,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         Class<? extends Annotation> callerEffect = atypeFactory.getDeclaredEffect(callerElt);
         // Field initializers inside anonymous inner classes show up with a null current-method ---
         // the traversal goes straight from the class to the initializer.
-        assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
+       // assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
 
         if (!genericEffect.LE(targetEffect, callerEffect)) {
             checker.report(Result.failure("call.invalid.super.effect", targetEffect, callerEffect), node);
@@ -151,17 +157,18 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
             }*/
 
             // TODO: Report an error for polymorphic method bodies??? Until we fix the receiver defaults, it won't really be correct
-            @SuppressWarnings("unused") // call has side-effects
+            //@SuppressWarnings("unused") / call has side-effects
             /*GenericEffect.EffectRange range =
                     atypeFactory.findInheritedEffectRange(
                             ((TypeElement) methElt.getEnclosingElement()), methElt, true, node);*/
           
-            atypeFactory.checkEffectOverrid((TypeElement)(methElt.getEnclosingElement()), methElt, true, node);
+           
+            ((GenericEffectTypeFactory)atypeFactory).checkEffectOverrid((TypeElement)(methElt.getEnclosingElement()), methElt, true, node);
            
             if (annotatedEffect == null) {
                 atypeFactory
                         .fromElement(methElt)
-                        .addAnnotation(atypeFactory.getDeclaredEffect(methElt).getAnnot());
+                        .addAnnotation(atypeFactory.getDeclaredEffect(methElt));
             }
         
         }
@@ -203,7 +210,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         // are implicitly moved into each constructor, which must then be @IO
         currentMethods.push(null);// static int x=dosomething();
         //effStack.push(new MainEffect(IOEffect.class));
-        effStack.push(genericEffect);
+        effStack.push(genericEffectHeirarchy.getBottomMostEffectInLattice());
         Void ret = super.visitClass(node, p);
         currentMethods.pop();
         effStack.pop();
@@ -243,7 +250,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         Class<? extends Annotation> callerEffect = atypeFactory.getDeclaredEffect(callerElt);
         // Field initializers inside anonymous inner classes show up with a null current-method ---
         // the traversal goes straight from the class to the initializer.
-        assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
+        //assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
 
         if (!genericEffect.LE(targetEffect, callerEffect)) {
             checker.report(Result.failure("constructor.call.invalid", targetEffect, callerEffect), node);

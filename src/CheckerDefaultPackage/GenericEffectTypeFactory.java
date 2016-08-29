@@ -3,6 +3,7 @@ package CheckerDefaultPackage;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -18,15 +19,12 @@ import org.checkerframework.common.basetype.BaseAnnotatedTypeFactory;
 import org.checkerframework.common.basetype.BaseTypeChecker;
 import org.checkerframework.framework.qual.SubtypeOf;
 import org.checkerframework.framework.source.Result;
-import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotationClassLoader;
-import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
-import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
-import org.checkerframework.javacutil.AnnotationUtils;
-import org.checkerframework.javacutil.ElementUtils;
-
-import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
+
+import testing.EffectHierarchy;
+import testing.MainEffect;
+
 
 public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 
@@ -37,12 +35,15 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 	public GenericEffectTypeFactory(BaseTypeChecker checker, boolean spew) {
 		// use true to enable flow inference, false to disable it
 		super(checker, false);
-
+		
+		genericEffect=new MainEffect();
+		genericEffectHeirarchy=new EffectHierarchy();
+		
 		debugSpew = spew;
 		this.postInit();
 	}
 
-	@Override
+	/*@Override
 	protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
 		AnnotationClassLoader loader = new AnnotationClassLoader(checker);
 
@@ -84,7 +85,7 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		}
 
 		return qualSet;
-	}
+	}*/
 
 	public ExecutableElement findJavaOverride(ExecutableElement overrider, TypeMirror parentType) {
 		if (parentType.getKind() != TypeKind.NONE) {
@@ -142,14 +143,9 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		return genericEffectHeirarchy.getBottomMostEffectInLattice();
 	}
 
-	/*public void findInheritedEffectRange(TypeElement declaringType,
-			ExecutableElement overridingMethod) {
-		findInheritedEffectRange(declaringType, overridingMethod, false, null);
-	}*/
-
 	/**
-	 * Looks for invalid overrides, 
-	 * (cases where a method override declares a larger/higher effect than a method it overrides/implements)
+	 * Looks for invalid overrides, (cases where a method override declares a
+	 * larger/higher effect than a method it overrides/implements)
 	 * 
 	 * @param declaringType
 	 * @param overridingMethod
@@ -160,43 +156,52 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 			boolean issueConflictWarning, Tree errorNode) {
 		assert (declaringType != null);
 
-		//Get the overriding method annotations
-		//Iterate over all of its subtypes 
-		//For each subtype, that has its own implementation or declaration of the input method:
-			//Check that the effect of the override <= the declared effect of the origin. 
-	
-		//There are two sets of subtypes to traverse:
-			//1. Chain of Parent classes -> terminating in Object
-			//2. Set of interfaces the class implements.
-		
-		
+		// Get the overriding method annotations
+		// Iterate over all of its subtypes
+		// For each subtype, that has its own implementation or declaration of
+		// the input method:
+		// Check that the effect of the override <= the declared effect of the
+		// origin.
+
+		// There are two sets of subtypes to traverse:
+		// 1. Chain of Parent classes -> terminating in Object
+		// 2. Set of interfaces the class implements.
+
 		Class<? extends Annotation> overridingEffect = getDeclaredEffect(overridingMethod);
-				
-		//Chain of parent classes
+
+		// Chain of parent classes
 		TypeMirror superclass = declaringType.getSuperclass();
 		while (superclass != null && superclass.getKind() != TypeKind.NONE) {
-            ExecutableElement overrides = findJavaOverride(overridingMethod, superclass);
-            Class<? extends Annotation> overridesEffect = getDeclaredEffect(overrides);
-            if (overrides != null) {
-            	Class<? extends Annotation> superClassEffect=getDeclaredEffect(overrides);
-            	if(!genericEffectHeirarchy.isSubtype(overridingEffect, overridesEffect) && issueConflictWarning){
-            		checker.report(
-                            Result.failure(
-                                    "override.effect.invalid",
-                                    overridingMethod,
-                                    declaringType,
-                                    overrides,
-                                    superclass),
-                            errorNode);
-            	}
-            }
-            
-            DeclaredType decl = (DeclaredType) superclass;
-            superclass = ((TypeElement) decl.asElement()).getSuperclass();
+			ExecutableElement overrides = findJavaOverride(overridingMethod, superclass);
+			if (overrides != null) {
+				Class<? extends Annotation> superClassEffect = getDeclaredEffect(overrides);
+				if(!genericEffect.LE(overridingEffect, superClassEffect)){
+					checker.report(Result.failure("override.effect.invalid", overridingMethod, declaringType, overrides,
+							superclass), errorNode);
+				}
+			}
+
+			DeclaredType decl = (DeclaredType) superclass;
+			superclass = ((TypeElement) decl.asElement()).getSuperclass();
 		}
-		
-		//Set of interfaces
-		
-		
+
+		// Set of interfaces
+		List<? extends TypeMirror> listOfInterfaces = declaringType.getInterfaces();
+		if (listOfInterfaces != null) {
+			for (TypeMirror implementedInterface : listOfInterfaces) {
+				if (implementedInterface.getKind() != TypeKind.NONE) {
+					ExecutableElement overrides = findJavaOverride(overridingMethod, implementedInterface);
+					if (overrides != null) {
+						Class<? extends Annotation> interfaceEffect = getDeclaredEffect(overrides);
+						if (!genericEffect.LE(overridingEffect, interfaceEffect)
+								&& issueConflictWarning) {
+							checker.report(Result.failure("override.effect.invalid", overridingMethod, declaringType,
+									overrides, implementedInterface), errorNode);
+						}
+					}
+				}
+			}
+		}
+
 	}
 }
