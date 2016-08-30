@@ -43,10 +43,12 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         effStack = new Stack<Class<? extends Annotation>>();
         currentMethods = new Stack<MethodTree>();
         
+        //For testing IO Effect Checker inside Generic Effect Checker
         genericEffect=new MainEffect();
         genericEffectHeirarchy=new EffectHierarchy();
     }
     
+    //Method to instantiate the factory class for the checker
     @Override
     protected GenericEffectTypeFactory createTypeFactory() {
         return new GenericEffectTypeFactory(checker, debugSpew);
@@ -105,10 +107,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         Class<? extends Annotation> targetEffect = atypeFactory.getDeclaredEffect(methodElt);
         Class<? extends Annotation> callerEffect = atypeFactory.getDeclaredEffect(callerElt);
         
-        // Field initializers inside anonymous inner classes show up with a null current-method ---
-        // the traversal goes straight from the class to the initializer.
-       // assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
-
         if (!genericEffect.LE(targetEffect, callerEffect)) {
         	
             checker.report(Result.failure("call.invalid.super.effect", targetEffect, callerEffect), node);
@@ -127,18 +125,8 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
     
     @Override
     public Void visitMethod(MethodTree node, Void p) {
-        // TODO: If the type we're in is a polymorphic (over effect qualifiers) type, the receiver must be @PolyIO.
-        //       Otherwise a "non-polymorphic" method of a polymorphic type could be called on a IO instance, which then
-        //       gets a NoIO reference to itself (unsound!) that it can then pass off elsewhere (dangerous!).  So all
-        //       receivers in methods of a @PolyIOType must be @PolyIO.
-        // TODO: What do we do then about classes that inherit from a concrete instantiation?  If it subclasses a NoIO
-        //       instantiation, all is well.  If it subclasses a IO instantiation, then the receivers should probably
-        //       be @IO in both new and override methods, so calls to polymorphic methods of the parent class will work
-        //       correctly.  In which case for proving anything, the qualifier on sublasses of IO instantiations would
-        //       always have to be @IO... Need to write down |- t for this system!  And the judgments for method overrides
-        //       and inheritance!  Those are actually the hardest part of the system.
-
-        ExecutableElement methElt = TreeUtils.elementFromDeclaration(node);
+       
+    	ExecutableElement methElt = TreeUtils.elementFromDeclaration(node);
         if (debugSpew) {
             System.err.println("\nVisiting method " + methElt);
         }
@@ -153,19 +141,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         for(Class<? extends Annotation> OkEffect: validEffects){
         	annotatedEffect=atypeFactory.getDeclAnnotation(methElt, OkEffect);
         	
-        	TypeElement targetClassElt = (TypeElement) methElt.getEnclosingElement(); //Get the annotation on the class
-
-           /* if (annotatedEffect != null && atypeFactory.isSameEffect(targetClassElt)) {
-                checker.report(Result.warning("effects.redundant.iotype"), node);
-            }*/
-
-            // TODO: Report an error for polymorphic method bodies??? Until we fix the receiver defaults, it won't really be correct
-            //@SuppressWarnings("unused") / call has side-effects
-            /*GenericEffect.EffectRange range =
-                    atypeFactory.findInheritedEffectRange(
-                            ((TypeElement) methElt.getEnclosingElement()), methElt, true, node);*/
-          
-           
             ((GenericEffectTypeFactory)atypeFactory).checkEffectOverrid((TypeElement)(methElt.getEnclosingElement()), methElt, true, node);
            
             if (annotatedEffect == null) {
@@ -176,12 +151,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         
         }
         	
-        /*AnnotationMirror targetIOP = atypeFactory.getDeclAnnotation(methElt, IOEffect.class);
-        AnnotationMirror targetNoIOP = atypeFactory.getDeclAnnotation(methElt, NoIOEffect.class);*/
-        
-        
-        // We hang onto the current method here for ease.  We back up the old
-        // current method because this code is reentrant when we traverse methods of an inner class
         currentMethods.push(node);
         effStack.push(atypeFactory.getDeclaredEffect(methElt));
         if (debugSpew) {
@@ -203,16 +172,8 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
     
     @Override
     public Void visitClass(ClassTree node, Void p) {
-        // TODO: Check constraints on this class decl vs. parent class decl., and interfaces
-        // TODO: This has to wait for now: maybe this will be easier with the isValidUse on the TypeFactory
-        // AnnotatedTypeMirror.AnnotatedDeclaredType atype = atypeFactory.fromClass(node);
-
-        // Push a null method and IO effect onto the stack for static field initialization
-        // TODO: Figure out if this is noIO! For static data, almost certainly,
-        // but for statically initialized instance fields, I'm assuming those
-        // are implicitly moved into each constructor, which must then be @IO
-        currentMethods.push(null);// static int x=dosomething();
-        //effStack.push(new MainEffect(IOEffect.class));
+        
+    	currentMethods.push(null);
         effStack.push(genericEffectHeirarchy.getBottomMostEffectInLattice());
         Void ret = super.visitClass(node, p);
         currentMethods.pop();
@@ -220,6 +181,9 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         return ret;
     }
  
+    /*
+     * Method to check if the constructor call is made from a valid context 
+     */
     @Override
     public Void visitNewClass(NewClassTree node, Void p) {
         if (debugSpew) {
@@ -234,7 +198,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
 
         MethodTree callerTree = TreeUtils.enclosingMethod(getCurrentPath());
         if (callerTree == null) {
-            // Static initializer; let's assume this is safe to have the IO effect
             if (debugSpew) {
                 System.err.println("No enclosing method: likely static initializer");
             }
@@ -251,10 +214,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
 
         Class<? extends Annotation> targetEffect = atypeFactory.getDeclaredEffect(methodElt);
         Class<? extends Annotation> callerEffect = atypeFactory.getDeclaredEffect(callerElt);
-        // Field initializers inside anonymous inner classes show up with a null current-method ---
-        // the traversal goes straight from the class to the initializer.
-        //assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
-
+        
         if (!genericEffect.LE(targetEffect, callerEffect)) {
             checker.report(Result.failure("constructor.call.invalid", targetEffect, callerEffect), node);
             if (debugSpew) {

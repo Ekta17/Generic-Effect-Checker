@@ -4,8 +4,10 @@ import java.lang.annotation.Annotation;
 
 public interface GenericEffect {
 
+	//Method to check Less than equal to Effect
 	boolean LE(Class<? extends Annotation> left, Class<? extends Annotation> right);
 
+	//Method to get minimum of (l, r)
 	Class<? extends Annotation> min(Class<? extends Annotation> l, Class<? extends Annotation> r);
 
 	class EffectRange {

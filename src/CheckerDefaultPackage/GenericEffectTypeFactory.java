@@ -36,13 +36,18 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		// use true to enable flow inference, false to disable it
 		super(checker, false);
 		
+		//For testing IO Effect Checker inside Generic Effect Checker
 		genericEffect=new MainEffect();
 		genericEffectHeirarchy=new EffectHierarchy();
 		
 		debugSpew = spew;
 		this.postInit();
 	}
-
+	
+	/**
+	 * For accessing effects from the command line, commented out for code as instantiating effects in the constructors and not 
+	 * accessing effects from command line
+	 */
 	/*@Override
 	protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
 		AnnotationClassLoader loader = new AnnotationClassLoader(checker);
@@ -87,6 +92,16 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		return qualSet;
 	}*/
 
+	/**
+	 * Method to check if override method's effect is valid override 
+	 * 
+	 * @param overrider : Method in the subclass which is overriding the method of superclass
+	 * @param parentType : Parent type, whose method is being overridden
+	 * @return
+	 * 			Overridden method :  as Executable element
+	 * 			null			  :	 if matching overridden method not found in Parent type
+	 * 		
+	 */
 	public ExecutableElement findJavaOverride(ExecutableElement overrider, TypeMirror parentType) {
 		if (parentType.getKind() != TypeKind.NONE) {
 			if (debugSpew) {
@@ -118,10 +133,14 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 		return null;
 	}
 
-	// Ekta: Is it possible to return GenericEffect instead of Class<? extends
-	// Annotation>
-	// like convert Class<? extends Annotation> to GenericEffect like a wrapper
-	// or something?
+	/**
+	 * Returns the Declared Effect on the passed method as parameter
+	 * @param methodElt : Method for which declared effect is to be returned  
+	 * @return 	
+	 * 			declared effect				: if methodElt is annotated with a valid effect
+	 * 			bottomMostEffectInLattice	: otherwise, bottom most effect of lattice
+	 * 
+	 */
 	public Class<? extends Annotation> getDeclaredEffect(ExecutableElement methodElt) {
 
 		if (debugSpew) {
@@ -147,10 +166,10 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 	 * Looks for invalid overrides, (cases where a method override declares a
 	 * larger/higher effect than a method it overrides/implements)
 	 * 
-	 * @param declaringType
-	 * @param overridingMethod
-	 * @param issueConflictWarning
-	 * @param errorNode
+	 * @param declaringType 		: Class containing the overriding method
+	 * @param overridingMethod 		: Overriding method in declaringType
+	 * @param issueConflictWarning 	: true if warning should be issued 
+	 * @param errorNode 			: node to check for errors
 	 */
 	public void checkEffectOverrid(TypeElement declaringType, ExecutableElement overridingMethod,
 			boolean issueConflictWarning, Tree errorNode) {

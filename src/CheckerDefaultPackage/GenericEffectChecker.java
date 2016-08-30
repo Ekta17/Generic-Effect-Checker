@@ -12,10 +12,16 @@ import org.checkerframework.framework.source.SupportedLintOptions;
 @SupportedLintOptions({"debugSpew"})
 public class GenericEffectChecker extends BaseTypeChecker{
 
+	/**
+	 * Required to override as GenericEffectChecker, a subclass of BaseTypeChecker, do not follow the name conventions.
+	 * 
+	 */
+	
 	@Override
 	protected BaseTypeVisitor<?> createSourceVisitor() {	
 		return new GenericEffectVisitor(this);
     }
+	
 	
 	 @Override
 	    public Collection<String> getSuppressWarningsKeys() {

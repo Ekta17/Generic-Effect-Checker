@@ -6,6 +6,11 @@ import CheckerDefaultPackage.GenericEffect;
 import CheckerDefaultPackage.qual.IOEffect;
 import CheckerDefaultPackage.qual.NoIOEffect;
 
+/**
+ * Test Class to test IO Effect Checker inside Generic Effect Checker
+ *
+ * Creates and checks relationship among the valid effects of IO Effect Checker
+ */
 
 public final class MainEffect implements GenericEffect {
 
@@ -16,6 +21,19 @@ public final class MainEffect implements GenericEffect {
 		annotClass = cls;
 	}*/
 
+	/**
+	 * Method to check Less than equal to Effect
+	 * 
+	 * @param left : Left Effect 
+	 * @param right: Right Effect
+	 * @return boolean
+	 * 		true	: if bottom effect is left effect and is equal to NoIOEffect OR 
+	 * 				  if top effect is right effect and is equal to IOEffect OR
+	 * 				  if left effect and right effect are the same
+	 * 		
+	 * 		false	: otherwise
+	 */
+	
 	@Override
 	public boolean LE(Class<? extends Annotation> left, Class<? extends Annotation> right) {
 		assert (left != null && right != null);
@@ -40,6 +58,14 @@ public final class MainEffect implements GenericEffect {
 		return leftBottom || rightTop || leftEffect.equals(rightEffect);
 	}
 
+	/**
+	 * Method to get minimum of (l, r)
+	 * 
+	 * @param l : left effect
+	 * @param r : right effect
+	 * @return minimum(l,r)
+	 */
+	
 	@Override
 	public Class<? extends Annotation> min(Class<? extends Annotation> l, Class<? extends Annotation> r) {
 		if (LE(l, r)) {
