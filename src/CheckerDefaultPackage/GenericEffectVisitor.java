@@ -104,12 +104,15 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
 
         Class<? extends Annotation> targetEffect = atypeFactory.getDeclaredEffect(methodElt);
         Class<? extends Annotation> callerEffect = atypeFactory.getDeclaredEffect(callerElt);
+        
         // Field initializers inside anonymous inner classes show up with a null current-method ---
         // the traversal goes straight from the class to the initializer.
        // assert (currentMethods.peek() == null || callerEffect.equals(effStack.peek()));
 
         if (!genericEffect.LE(targetEffect, callerEffect)) {
+        	
             checker.report(Result.failure("call.invalid.super.effect", targetEffect, callerEffect), node);
+            
             if (debugSpew) {
                 System.err.println("Issuing error for node: " + node);
             }

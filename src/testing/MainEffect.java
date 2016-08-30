@@ -23,17 +23,19 @@ public final class MainEffect implements GenericEffect {
 		Class<? extends Annotation> leftEffect;
 		Class<? extends Annotation> rightEffect;
 
-		boolean leftBottom = (left.getAnnotation(NoIOEffect.class) != null) ? true : false;
+		boolean leftBottom = (left.equals(NoIOEffect.class)) ? true : false;
+		
 		if (leftBottom)
 			leftEffect = NoIOEffect.class;
 		else
 			leftEffect = IOEffect.class;
 
-		boolean rightTop = (right.getAnnotation(IOEffect.class) != null) ? true : false;
+		boolean rightTop = (right.equals(IOEffect.class)) ? true : false;
+		
 		if (rightTop)
-			rightEffect = NoIOEffect.class;
-		else
 			rightEffect = IOEffect.class;
+		else
+			rightEffect = NoIOEffect.class;
 
 		return leftBottom || rightTop || leftEffect.equals(rightEffect);
 	}
