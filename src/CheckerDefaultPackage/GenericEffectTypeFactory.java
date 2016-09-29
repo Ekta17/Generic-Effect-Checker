@@ -45,54 +45,6 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 	}
 	
 	/**
-	 * For accessing effects from the command line, commented out for code as instantiating effects in the constructors and not 
-	 * accessing effects from command line
-	 */
-	/*@Override
-	protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
-		AnnotationClassLoader loader = new AnnotationClassLoader(checker);
-
-		Set<Class<? extends Annotation>> qualSet = new HashSet<Class<? extends Annotation>>();
-
-		String qualNames = checker.getOption("quals");
-		String qualDirectories = checker.getOption("qualDirs");
-
-		if (qualNames == null && qualDirectories == null) {
-			checker.userErrorAbort("SubtypingChecker: missing required option. Use -Aquals or -AqualDirs");
-			throw new Error("This can't happen"); // dead code
-		}
-
-		// load individually named qualifiers
-		if (qualNames != null) {
-			for (String qualName : qualNames.split(",")) {
-				qualSet.add(loader.loadExternalAnnotationClass(qualName));
-			}
-		}
-
-		// load directories of qualifiers
-		if (qualDirectories != null) {
-			for (String dirName : qualDirectories.split(":")) {
-				qualSet.addAll(loader.loadExternalAnnotationClassesFromDirectory(dirName));
-			}
-		}
-
-		// check for subtype meta-annotation
-		for (Class<? extends Annotation> qual : qualSet) {
-			Annotation subtypeOfAnnotation = qual.getAnnotation(SubtypeOf.class);
-			if (subtypeOfAnnotation != null) {
-				for (Class<? extends Annotation> superqual : qual.getAnnotation(SubtypeOf.class).value()) {
-					if (!qualSet.contains(superqual)) {
-						checker.userErrorAbort("SubtypingChecker: qualifier " + qual
-								+ " was specified via -Aquals but its super-qualifier " + superqual + " was not");
-					}
-				}
-			}
-		}
-
-		return qualSet;
-	}*/
-
-	/**
 	 * Method to check if override method's effect is valid override 
 	 * 
 	 * @param overrider : Method in the subclass which is overriding the method of superclass
@@ -166,6 +118,16 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 	 * Looks for invalid overrides, (cases where a method override declares a
 	 * larger/higher effect than a method it overrides/implements)
 	 * 
+	 * Process followed: 
+	 * 		Get the overriding method annotations
+	 *		Iterate over all of its subtypes
+	 *		For each subtype, that has its own implementation or declaration of the input method:
+	 *			Check that the effect of the override <= the declared effect of the origin.
+ 	 *
+	 *		There are two sets of subtypes to traverse:
+	 *			1. Chain of Parent classes -> terminating in Object
+	 *			2. Set of interfaces the class implements.
+	 * 
 	 * @param declaringType 		: Class containing the overriding method
 	 * @param overridingMethod 		: Overriding method in declaringType
 	 * @param issueConflictWarning 	: true if warning should be issued 
@@ -174,17 +136,6 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 	public void checkEffectOverrid(TypeElement declaringType, ExecutableElement overridingMethod,
 			boolean issueConflictWarning, Tree errorNode) {
 		assert (declaringType != null);
-
-		// Get the overriding method annotations
-		// Iterate over all of its subtypes
-		// For each subtype, that has its own implementation or declaration of
-		// the input method:
-		// Check that the effect of the override <= the declared effect of the
-		// origin.
-
-		// There are two sets of subtypes to traverse:
-		// 1. Chain of Parent classes -> terminating in Object
-		// 2. Set of interfaces the class implements.
 
 		Class<? extends Annotation> overridingEffect = getDeclaredEffect(overridingMethod);
 

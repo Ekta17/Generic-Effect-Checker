@@ -57,10 +57,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
     @Override
     protected void checkMethodInvocability(
             AnnotatedExecutableType method, MethodInvocationTree node) {
-        // The inherited version of this complains about invoking methods of @Super instantiations of
-        // classes, which by default are annotated @AlwaysSub, which for data type qualifiers is
-        // reasonable, but it not what we want, since we want .
-        // TODO: Undo this hack!
     }
 
     @Override
@@ -74,7 +70,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         return true;
     }
     
-    // Check that the invoked effect is <= permitted effect (effStack.peek())
+    // Method to check that the invoked effect is <= permitted effect (effStack.peek())
     @Override
     public Void visitMethodInvocation(MethodInvocationTree node, Void p) {
         if (debugSpew) {
@@ -82,14 +78,13 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         }
 
         // Target method annotations
-        ExecutableElement methodElt = TreeUtils.elementFromUse(node);//ExecutableElement: This gets the inherited methods from the base class of the method being analyzed
+        ExecutableElement methodElt = TreeUtils.elementFromUse(node);
         if (debugSpew) {
             System.err.println("methodElt found");
         }
 
         MethodTree callerTree = TreeUtils.enclosingMethod(getCurrentPath());
         if (callerTree == null) {
-            // Static initializer; let's assume this is safe to have the Super effect
             if (debugSpew) {
                 System.err.println("No enclosing method: likely static initializer");
             }
@@ -99,7 +94,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
             System.err.println("callerTree found");
         }
 
-        ExecutableElement callerElt = TreeUtils.elementFromDeclaration(callerTree);// What annotations has been applied
+        ExecutableElement callerElt = TreeUtils.elementFromDeclaration(callerTree);
         if (debugSpew) {
             System.err.println("callerElt found");
         }
@@ -131,10 +126,8 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
             System.err.println("\nVisiting method " + methElt);
         }
 
-        // Check for conflicting (multiple) annotations
         assert (methElt != null);
         
-        //Ekta: Need to enumerate collection of valid effects and return the valid effect if methElt matches the valid effect from the list. 
         ArrayList<Class<? extends Annotation>> validEffects = genericEffectHeirarchy.getValidEffects();
         AnnotationMirror annotatedEffect;
         
