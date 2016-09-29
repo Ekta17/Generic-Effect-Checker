@@ -1,5 +1,5 @@
 package java.io;
-import qual.*;
+import CheckerDefaultPackage.qual.*;
 
 @IOType class PrintStream{
 	@NoIOEffect void print (boolean b);
