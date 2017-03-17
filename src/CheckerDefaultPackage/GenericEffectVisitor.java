@@ -21,15 +21,13 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 
-import testing.EffectHierarchy;
 import testing.MainEffect;
 
 public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFactory>{
 
 	protected final boolean debugSpew;
 	private GenericEffect genericEffect;
-	private GenericEffectHeirarchy genericEffectHeirarchy;
-
+	
     // effStack and currentMethods should always be the same size.
     protected final Stack<Class<? extends Annotation>> effStack;
     protected final Stack<MethodTree> currentMethods;
@@ -45,7 +43,6 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
         
         //For testing IO Effect Checker inside Generic Effect Checker
         genericEffect=new MainEffect();
-        genericEffectHeirarchy=new EffectHierarchy();
     }
     
     //Method to instantiate the factory class for the checker
@@ -128,7 +125,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
 
         assert (methElt != null);
         
-        ArrayList<Class<? extends Annotation>> validEffects = genericEffectHeirarchy.getValidEffects();
+        ArrayList<Class<? extends Annotation>> validEffects = genericEffect.getValidEffects();
         AnnotationMirror annotatedEffect;
         
         for(Class<? extends Annotation> OkEffect: validEffects){
@@ -167,7 +164,7 @@ public class GenericEffectVisitor  extends BaseTypeVisitor<GenericEffectTypeFact
     public Void visitClass(ClassTree node, Void p) {
         
     	currentMethods.push(null);
-        effStack.push(genericEffectHeirarchy.getBottomMostEffectInLattice());
+        effStack.push(genericEffect.getBottomMostEffectInLattice());
         Void ret = super.visitClass(node, p);
         currentMethods.pop();
         effStack.pop();

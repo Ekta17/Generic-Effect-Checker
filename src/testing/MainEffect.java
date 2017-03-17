@@ -1,6 +1,7 @@
 package testing;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 
 import CheckerDefaultPackage.GenericEffect;
 import CheckerDefaultPackage.qual.IOEffect;
@@ -13,13 +14,6 @@ import CheckerDefaultPackage.qual.NoIOEffect;
  */
 
 public final class MainEffect implements GenericEffect {
-
-	/*private final Class<? extends Annotation> annotClass;
-
-	public MainEffect(Class<? extends Annotation> cls) {
-		assert (cls.equals(IOEffect.class) || cls.equals(NoIOEffect.class));
-		annotClass = cls;
-	}*/
 
 	/**
 	 * Method to check Less than equal to Effect
@@ -74,12 +68,6 @@ public final class MainEffect implements GenericEffect {
             return r;
         }
 	}
-
-	/*@SideEffectFree
-    @Override
-    public String toString() {
-        return annotClass.getSimpleName();
-    }*/
 	
 	@Override
     public boolean equals(Object o) {
@@ -89,11 +77,46 @@ public final class MainEffect implements GenericEffect {
             return super.equals(o);
         }
     }
+	
+	/**
+	 * Get the collection of valid effects. 
+	 * For IO EFfect checker:
+	 * 	Valid Effects: 
+	 * 					IOEffect, and 
+	 * 					NoIOEffect
+	 */
+	
+	@Override
+	public ArrayList<Class<? extends Annotation>> getValidEffects() {
+		
+		ArrayList<Class<? extends Annotation>> listOfEffects=new ArrayList<>();
+		listOfEffects.add(NoIOEffect.class);
+		listOfEffects.add(IOEffect.class);
+		
+		return listOfEffects;
+	}
 
-   /* @Pure
-    @Override
-    public int hashCode() {
-        return 31 + annotClass.hashCode();
-    }*/
+	/**
+	 * Get the Top Most Effect of Lattice.
+	 * For IO EFfect checker:
+	 * Top Most Effect of Lattice:	IOEffect
+	 * 
+	 */
+	
+	@Override
+	public Class<? extends Annotation> getTopMostEffectInLattice() {
+		return IOEffect.class;
+	}
 
+	/**
+	 * Get the Bottom Most Effect of Lattice.
+	 * For IO EFfect checker:
+	 * Bottom Most Effect of Lattice:	NoIOEffect
+	 * 
+	 */
+	
+	@Override
+	public Class<? extends Annotation> getBottomMostEffectInLattice() {
+		return NoIOEffect.class;
+	}
 }

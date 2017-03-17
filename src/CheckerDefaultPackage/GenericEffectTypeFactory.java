@@ -2,9 +2,7 @@ package CheckerDefaultPackage;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -17,12 +15,10 @@ import javax.lang.model.type.TypeMirror;
 
 import org.checkerframework.common.basetype.BaseAnnotatedTypeFactory;
 import org.checkerframework.common.basetype.BaseTypeChecker;
-import org.checkerframework.framework.qual.SubtypeOf;
 import org.checkerframework.framework.source.Result;
-import org.checkerframework.framework.type.AnnotationClassLoader;
+
 import com.sun.source.tree.Tree;
 
-import testing.EffectHierarchy;
 import testing.MainEffect;
 
 
@@ -30,15 +26,13 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 
 	protected final boolean debugSpew;
 	private GenericEffect genericEffect;
-	private GenericEffectHeirarchy genericEffectHeirarchy;
-
+	
 	public GenericEffectTypeFactory(BaseTypeChecker checker, boolean spew) {
 		// use true to enable flow inference, false to disable it
 		super(checker, false);
 		
-		//For testing IO Effect Checker inside Generic Effect Checker
+		//For testing Customized Checker inside Generic Effect Checker
 		genericEffect=new MainEffect();
-		genericEffectHeirarchy=new EffectHierarchy();
 		
 		debugSpew = spew;
 		this.postInit();
@@ -99,7 +93,7 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 			System.err.println("begin mayHaveIOEffect(" + methodElt + ")");
 		}
 
-		ArrayList<Class<? extends Annotation>> validEffects = genericEffectHeirarchy.getValidEffects();
+		ArrayList<Class<? extends Annotation>> validEffects = genericEffect.getValidEffects();
 		AnnotationMirror annotatedEffect = null;
 
 		for (Class<? extends Annotation> OkEffect : validEffects) {
@@ -111,7 +105,7 @@ public class GenericEffectTypeFactory extends BaseAnnotatedTypeFactory {
 				return OkEffect;
 			}
 		}
-		return genericEffectHeirarchy.getBottomMostEffectInLattice();
+		return genericEffect.getBottomMostEffectInLattice();
 	}
 
 	/**
